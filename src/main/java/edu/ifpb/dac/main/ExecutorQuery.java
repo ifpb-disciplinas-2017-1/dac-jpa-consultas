@@ -2,11 +2,13 @@ package edu.ifpb.dac.main;
 
 import edu.ifpb.dac.model.Dependente;
 import edu.ifpb.dac.model.Empregado;
+import edu.ifpb.dac.model.EmpregadoFaculdade;
 import edu.ifpb.dac.model.Faculdade;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 
 /**
@@ -23,8 +25,21 @@ public class ExecutorQuery {
 //        consultarTodosOsEmpregados(em);
 //        consultarFaculdadeComId(em);
 //        consultarFaculdadeComIdParametros(em);
-        consultarDependentesComPaginacao(em);
+//        consultarDependentesComPaginacao(em);
 //        consultarNomeDoDependentes(em);
+//        consultarNomeDoEmpregadoEFaculdade(em);
+//        consultarNomeDoEmpregadoEFaculdadeComTipo(em);
+//        consultarNomeDoEmpregadoQuePossuiDependentes(em);
+//        consultarNomeDoEmpregadoPossuiDependentesJOIN(em);
+//        consultarNomeDoEmpregadoPossuiDependentesLEFTJOIN(em);
+//        consultarDependentesComIdEntre(em);
+//        consultarDependentesComIdEntreBETWEEN(em);
+//        consultarDependentesComIdForaBETWEEN(em);
+//        consultarEmpregadoSemFaculdade(em);
+//        consultarEmpregadoComFaculdade(em);
+//        consultarEmpregadoPossuiDependente(em);
+//        consultarEmpregadoDependenteComNome(em);
+        consultarPrimeiraLetraDependente(em);
     }
 
     private static void consultarTodosOsEmpregados(EntityManager em) {
@@ -73,7 +88,7 @@ public class ExecutorQuery {
 //            paginacao(createQuery, i, inicio, resultadosPorPagina);
 //        }
         do {
-            paginacao(createQuery, inicio/resultadosPorPagina, inicio, resultadosPorPagina);
+            paginacao(createQuery, inicio / resultadosPorPagina, inicio, resultadosPorPagina);
             inicio += resultadosPorPagina;
         } while (inicio < count);
     }
@@ -88,28 +103,108 @@ public class ExecutorQuery {
         String sql = "SELECT d.nome FROM Dependente d";
         TypedQuery<String> createQuery = em.createQuery(sql, String.class);
         createQuery.getResultList().stream().forEach(System.out::println);
-        
+
     }
+
+    private static void consultarNomeDoEmpregadoEFaculdade(EntityManager em) {
+        String sql = "SELECT e.nome, e.faculdade FROM Empregado e";
+        // String, Faculdade
+        Query createQuery = em.createQuery(sql);
+        List<Object[]> resultList = createQuery.getResultList();
+        resultList.forEach((tupla) -> {
+            String nome = (String) tupla[0];
+            Faculdade faculdade = (Faculdade) tupla[1];
+            System.out.println(String.format("Nome:%s e faculdade: %s", nome, faculdade));
+        });
+
+    }
+
+    private static void consultarNomeDoEmpregadoEFaculdadeComTipo(EntityManager em) {
+        String sql = "SELECT new edu.ifpb.dac.model.EmpregadoFaculdade(e.nome, e.faculdade) FROM Empregado e";
+        TypedQuery<EmpregadoFaculdade> createQuery = em.createQuery(sql, EmpregadoFaculdade.class);
+        createQuery.getResultList().stream().forEach(System.out::println);
+    }
+
+    private static void consultarNomeDoEmpregadoQuePossuiDependentes(EntityManager em) {
+        String sql = "SELECT e.nome FROM Empregado e, IN (e.dependentes) d";
+        TypedQuery<String> createQuery = em.createQuery(sql, String.class);
+        createQuery.getResultList().stream().forEach(System.out::println);
+    }
+
+    private static void consultarNomeDoEmpregadoPossuiDependentesJOIN(EntityManager em) {
+        String sql = "SELECT DISTINCT(e.nome) FROM Empregado e JOIN (e.dependentes) d";
+        TypedQuery<String> createQuery = em.createQuery(sql, String.class);
+        createQuery.getResultList().stream().forEach(System.out::println);
+    }
+
+    // nome do empregado e quantidade de dependentes
+    private static void consultarNomeDoEmpregadoPossuiDependentesLEFTJOIN(EntityManager em) {
+        String sql = "SELECT e.nome, COUNT(d) FROM Empregado e LEFT JOIN (e.dependentes) d GROUP BY e.nome";
+        Query createQuery = em.createQuery(sql);
+
+        List<Object[]> resultList = createQuery.getResultList();
+        resultList.forEach((tupla) -> {
+            String nome = (String) tupla[0];
+            Long quantidade = (Long) tupla[1];
+            System.out.println(String.format("Nome:%s e quantidade: %d", nome, quantidade));
+        });
+    }
+
+    private static void consultarDependentesComIdEntre(EntityManager em) {
+        String sql = "SELECT d FROM Dependente d WHERE d.id>=1 AND d.id<=(55 + 1)";
+        TypedQuery<Dependente> createQuery = em.createQuery(sql, Dependente.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarDependentesComIdEntreBETWEEN(EntityManager em) {
+        String sql = "SELECT d FROM Dependente d WHERE d.id BETWEEN 1 AND 56";
+        TypedQuery<Dependente> createQuery = em.createQuery(sql, Dependente.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarDependentesComIdForaBETWEEN(EntityManager em) {
+        String sql = "SELECT d FROM Dependente d WHERE d.id NOT BETWEEN 1 AND 56";
+        TypedQuery<Dependente> createQuery = em.createQuery(sql, Dependente.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarEmpregadoSemFaculdade(EntityManager em) {
+//     String sql = "SELECT * FROM Empregado WHERE chave_faculdade is null";
+        String sql = "SELECT e FROM Empregado e WHERE e.faculdade IS NULL";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarEmpregadoComFaculdade(EntityManager em) {
+        String sql = "SELECT e FROM Empregado e WHERE e.faculdade IS NOT NULL";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarEmpregadoPossuiDependente(EntityManager em) {
+        String sql = "SELECT e FROM Empregado e WHERE e.dependentes IS NOT EMPTY";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    // recuperar o empregado que possui algum dependente com nome iniciando em M
+    private static void consultarEmpregadoDependenteComNome(EntityManager em) {
+        String sql = "SELECT LOWER(e.nome) FROM Empregado e, Dependente d WHERE d MEMBER OF e.dependentes "
+                + "AND UPPER(d.nome) LIKE 'M%'";
+        TypedQuery<String> createQuery = em.createQuery(sql, String.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarPrimeiraLetraDependente(EntityManager em) {
+        String sql = "SELECT SUBSTRING(d.nome,1,1) FROM Dependente d";
+        TypedQuery<String> createQuery = em.createQuery(sql, String.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
 }
 
-//        
-//        consultarNomeDoEmpregadoFaculdade(em);
-//        consultarNomeDoEmpregadoFaculdadeTipada(em);
-//        consultarNomeDoEmpregadoPossuiDependentes(em);
-//        consultarNomeDoEmpregadoPossuiDependentesJOIN(em);
-//        consultarNomeDoEmpregadoPossuiDependentesLEFTJOIN(em);
-//        consultarEmpregadoPossuiDependentes(em);
-//        consultarDependentesComIdEntre(em);
-//        consultarDependentesComIdEntreBETWEEN(em);
-//        consultarDependentesComIdForaBETWEEN(em);
-//        consultarEmpregadoSemFaculdade(em);
-//        consultarEmpregadoComFaculdade(em);
-//        consultarEmpregadoPossuiDependente(em);
-//        consultarEmpregadoDependenteComNome(em);
-//        consultarNomeDependenteComNome(em);
-//        consultarPrimeiraLetraDependente(em);
-//        consultarTodosOsDependentes(em);
-//        consultarNomeDoEmpregadoQuantidadeDependentes(em);
+//        consultarNumeroDeTodosOsDependentes(em);
+//        consultarNomeDoEmpregadoEQuantidadeDependentes(em); //com mais de dois dep.
 //        consultarEmpregadoComIdSuperiorAMedia(em);
 //        consultarEmpregadoSeIdSuperiorADez(em);
 //        consultarEmpregadoSeQualquerIdSuperiorADez(em);
@@ -119,3 +214,4 @@ public class ExecutorQuery {
 //        consultarTodosOsDependentesNamedQuery(em);
 //        consultarOsDependentesComIdNamedQuery(em);
 //        consultarTodosOsEmpregadosNativeQuery(em);
+//git tag -a aula-1 -m "após a primeira aula"
