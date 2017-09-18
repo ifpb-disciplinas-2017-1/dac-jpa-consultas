@@ -4,17 +4,18 @@ import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 
 /**
  *
  * @author Ricardo Job
  */
-//@NamedQueries(
-//   {
-//    @NamedQuery(name = "dependente.todos", query = "SELECT d FROM Dependente d")
-//    @NamedQuery(name = "dependente.id", query = "SELECT d FROM Dependente d WHERE d.id=:id")
-//   }
-//)
+@NamedQueries({
+    @NamedQuery(name = "Dependente.todos", query = "SELECT d FROM Dependente d"),
+    @NamedQuery(name = "Dependente.nome", query = "SELECT d FROM Dependente d WHERE d.nome LIKE :nome"),
+    @NamedQuery(name = "Dependente.id", query = "SELECT d FROM Dependente d WHERE d.id=:id")
+   })
 @Entity
 public class Dependente implements Serializable {
 

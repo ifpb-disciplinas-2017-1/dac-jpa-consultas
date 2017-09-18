@@ -4,6 +4,7 @@ import edu.ifpb.dac.model.Dependente;
 import edu.ifpb.dac.model.Empregado;
 import edu.ifpb.dac.model.EmpregadoFaculdade;
 import edu.ifpb.dac.model.Faculdade;
+import java.util.Arrays;
 import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -39,7 +40,18 @@ public class ExecutorQuery {
 //        consultarEmpregadoComFaculdade(em);
 //        consultarEmpregadoPossuiDependente(em);
 //        consultarEmpregadoDependenteComNome(em);
-        consultarPrimeiraLetraDependente(em);
+//        consultarPrimeiraLetraDependente(em);
+//        consultarNumeroDeTodosOsDependentes(em);
+//        consultarNomeDoEmpregadoEQuantidadeDependentes(em);
+//        consultarEmpregadoComIdSuperiorAMedia(em);
+//        consultarEmpregadoSeTodosIdSuperiorADez(em);
+//        consultarEmpregadoSeQualquerIdSuperiorADez(em);
+//        consultarEmpregadoComDependentesInicandoComM(em);
+//        atualizarNomeTodosDependentes(em);
+//        removerDependenteComId(em);
+//        consultarTodosOsDependentesNamedQuery(em);
+//        consultarOsDependentesComIdNamedQuery(em);
+        consultarTodosOsEmpregadosNativeQuery(em);
     }
 
     private static void consultarTodosOsEmpregados(EntityManager em) {
@@ -201,17 +213,106 @@ public class ExecutorQuery {
         createQuery.getResultList().forEach(System.out::println);
     }
 
-}
+    private static void consultarNumeroDeTodosOsDependentes(EntityManager em) {
+        String sql = "SELECT COUNT(d) FROM Dependente d";
+        TypedQuery<Long> createQuery = em.createQuery(sql, Long.class);
+        Long count = createQuery.getSingleResult();
+        System.out.println("quantidade de Dependentes = " + count);
+    }
 
-//        consultarNumeroDeTodosOsDependentes(em);
-//        consultarNomeDoEmpregadoEQuantidadeDependentes(em); //com mais de dois dep.
-//        consultarEmpregadoComIdSuperiorAMedia(em);
-//        consultarEmpregadoSeIdSuperiorADez(em);
-//        consultarEmpregadoSeQualquerIdSuperiorADez(em);
-//        consultarEmpregadoComDependentesInicandoComM(em);
-//        atualizarNomeTodosDependentes(em);
-//        removerDependenteComId(em);
-//        consultarTodosOsDependentesNamedQuery(em);
-//        consultarOsDependentesComIdNamedQuery(em);
-//        consultarTodosOsEmpregadosNativeQuery(em);
-//git tag -a aula-1 -m "após a primeira aula"
+    private static void consultarNomeDoEmpregadoEQuantidadeDependentes(EntityManager em) {
+        String sql = "SELECT e.nome, COUNT(d) FROM Empregado e LEFT JOIN e.dependentes d"
+                + " GROUP BY e.nome";
+        Query createQuery = em.createQuery(sql);
+        List<Object[]> resultList = createQuery.getResultList();
+        resultList.stream()
+                .map((objects) -> String.format("Nome:%s e dependentes:%d",
+                objects[0], objects[1]))
+                .forEach(System.out::println);
+    }
+
+    private static void consultarEmpregadoComIdSuperiorAMedia(EntityManager em) {
+        String sql = "SELECT e FROM Empregado e "
+                + " WHERE e.id > SELECT AVG(emp.id) FROM Empregado emp";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarEmpregadoSeTodosIdSuperiorADez(EntityManager em) {
+        String sql = "SELECT e FROM Empregado e "
+                + "WHERE 10 < ALL (SELECT emp.id FROM Empregado emp)";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+
+    }
+
+    private static void consultarEmpregadoSeQualquerIdSuperiorADez(EntityManager em) {
+        String sql = "SELECT e FROM Empregado e "
+                + "WHERE 10 < ANY (SELECT emp.id FROM Empregado emp)";
+//                + "WHERE 10 < SOME (SELECT emp.id FROM Empregado emp)";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarEmpregadoComDependentesInicandoComM(EntityManager em) {
+        String sql = "SELECT e FROM Empregado e "
+                + " WHERE EXISTS (SELECT d.nome FROM e.dependentes d "
+                + " WHERE UPPER(d.nome) LIKE 'M%')";
+        TypedQuery<Empregado> createQuery = em.createQuery(sql, Empregado.class);
+        createQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void atualizarNomeTodosDependentes(EntityManager em) {
+//        String sql = "SELECT d FROM Dependente d";
+//        TypedQuery<Dependente> createQuery = em.createQuery(sql, Dependente.class);
+//        List<Dependente> resultList = createQuery.getResultList();
+//        for (Dependente dependente : resultList) {
+//            em.getTransaction().begin();
+//            dependente.setNome(dependente.getNome().toUpperCase());
+//            em.getTransaction().commit();
+//        }
+        String sql = "UPDATE Dependente d SET d.nome = UPPER(d.nome) WHERE d.id=:id";
+        Query createQuery = em.createQuery(sql);
+        createQuery.setParameter("id", 6);
+        em.getTransaction().begin();
+        int executeUpdate = createQuery.executeUpdate();
+        em.getTransaction().commit();
+        System.out.println(executeUpdate);
+
+    }
+
+    private static void removerDependenteComId(EntityManager em) {
+        String sql = "DELETE FROM Dependente d WHERE d.id=:id";
+        Query createQuery = em.createQuery(sql);
+        createQuery.setParameter("id", 58);
+        em.getTransaction().begin();
+        int executeUpdate = createQuery.executeUpdate();
+        em.getTransaction().commit();
+        System.out.println(executeUpdate);
+
+    }
+
+    private static void consultarTodosOsDependentesNamedQuery(EntityManager em) {
+        String sql = "Dependente.todos";
+        TypedQuery<Dependente> createNamedQuery = em.createNamedQuery(sql, Dependente.class);
+        createNamedQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarOsDependentesComIdNamedQuery(EntityManager em) {
+        String sql = "Dependente.id";
+        TypedQuery<Dependente> createNamedQuery = em.createNamedQuery(sql, Dependente.class);
+//        Query createNamedQuery = em.createNamedQuery(sql);
+        createNamedQuery.setParameter("id", 57);
+        createNamedQuery.getResultList().forEach(System.out::println);
+    }
+
+    private static void consultarTodosOsEmpregadosNativeQuery(EntityManager em) {
+        String sql = "SELECT * FROM Empregado";
+        Query createNativeQuery = em.createNativeQuery(sql);
+        List<Object[]> resultList = createNativeQuery.getResultList();
+        resultList.stream()
+                .map((objects) -> Arrays.toString(objects))
+                .forEach(System.out::println);
+    }
+}
+//git tag -a aula-2 -m "após a segunda aula"
